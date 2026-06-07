@@ -30,7 +30,6 @@ const formatDateToDDMMYYYY = (dateStr: string) => {
 // Custom Tooltip for Parameters
 const CustomTooltip = ({ active, payload, label, unit = '' }: any) => {
   if (active && payload && payload.length) {
-    const data = payload[0].payload;
     return (
       <div style={{ backgroundColor: '#111827', padding: '10px 14px', borderRadius: '6px', border: '1px solid #374151', color: '#fff', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
@@ -194,7 +193,15 @@ export default function App() {
     return (
       <div className="widget" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
         <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>{title} History</h3>
-        <div style={{ height: '300px', width: '100%', position: 'relative' }}>
+        <div 
+          style={{ height: '300px', width: '100%', position: 'relative', cursor: zoomPanHook.isPanning ? 'grabbing' : 'crosshair', userSelect: 'none' }}
+          onMouseDownCapture={handleMouseDown}
+          onMouseMoveCapture={handleMouseMove}
+          onMouseUpCapture={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onWheelCapture={handleWheel}
+          onContextMenu={(e) => e.preventDefault()}
+        >
           {historyLoading ? (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div className="loading-spinner"></div>
@@ -205,15 +212,7 @@ export default function App() {
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart 
-                data={chartData} 
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-                onWheelCapture={handleWheel}
-                style={{ cursor: zoomPanHook.isPanning ? 'grabbing' : 'crosshair' }}
-              >
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                 <XAxis 
                   dataKey="timeLabel" 
