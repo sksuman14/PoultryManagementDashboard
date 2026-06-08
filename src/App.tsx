@@ -30,10 +30,13 @@ const formatDateToYYYYMMDD = (dateStr: string) => {
 // Custom Tooltip for Parameters
 const CustomTooltip = ({ active, payload, label, unit = '' }: any) => {
   if (active && payload && payload.length) {
+    const dataPoint = payload[0].payload;
     return (
       <div style={{ backgroundColor: '#111827', padding: '10px 14px', borderRadius: '6px', border: '1px solid #374151', color: '#fff', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-          <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '6px' }}>{label}</div>
+          <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '6px' }}>
+            {dataPoint.dateLabel ? `${dataPoint.dateLabel} - ${dataPoint.timeLabel}` : label}
+          </div>
           <div style={{ fontSize: '13px', fontWeight: 600, color: payload[0].color, marginBottom: '2px' }}>
             {payload[0].name}: {payload[0].value} {unit}
           </div>
@@ -136,12 +139,6 @@ export default function App() {
       if (timeRange === '1 day') {
         start = formatDateToYYYYMMDD(selectedDate);
         end = formatDateToYYYYMMDD(selectedDate);
-      } else if (timeRange === '7 day') {
-        const defaultEnd = new Date('2025-10-30');
-        const d = new Date('2025-10-30');
-        d.setDate(d.getDate() - 7);
-        start = formatDateToYYYYMMDD(d.toISOString().split('T')[0]);
-        end = formatDateToYYYYMMDD(defaultEnd.toISOString().split('T')[0]);
       } else if (timeRange === 'Custom') {
         start = formatDateToYYYYMMDD(startDate);
         end = formatDateToYYYYMMDD(endDate);
@@ -161,10 +158,15 @@ export default function App() {
             const formatted = records.map((d: any) => {
               const rawTs = d.timestamp || d.TimeStamp_IST || '';
               const timestamp = rawTs.replace(' ', 'T');
+              const dateObj = new Date(timestamp);
+              const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              const dateStr = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric' });
+              
               return {
                 ...d,
-                timeLabel: new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                dateLabel: new Date(timestamp).toLocaleDateString(),
+                timeLabel: timeStr,
+                dateLabel: dateObj.toLocaleDateString(),
+                displayLabel: timeRange !== '1 day' ? (timeStr === '12:00 AM' ? dateStr : `${dateStr} ${timeStr}`) : timeStr,
                 TimeStamp_IST: timestamp,
                 NH3: d.ammonia !== undefined ? parseFloat(d.ammonia) : (d.NH3 !== undefined ? parseFloat(d.NH3) : parseFloat((Math.random() * 5 + 1).toFixed(2))),
                 CurrentTemperature: d.temperature !== undefined ? parseFloat(d.temperature) : parseFloat(d.CurrentTemperature),
@@ -218,7 +220,7 @@ export default function App() {
               <LineChart data={displayedData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                 <XAxis 
-                  dataKey="timeLabel" 
+                  dataKey="displayLabel" 
                   stroke="#9ca3af" 
                   fontSize={12} 
                   tickMargin={10}
@@ -479,7 +481,7 @@ export default function App() {
                             </button>
                           )}
                           <div style={{ display: 'flex', backgroundColor: '#111827', borderRadius: '0.375rem', padding: '0.25rem' }}>
-                            {['1 day', '7 day', 'Custom'].map((range) => (
+                            {['1 day', 'Custom'].map((range) => (
                               <button
                                 key={range}
                                 onClick={() => setTimeRange(range)}
