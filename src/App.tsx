@@ -19,12 +19,12 @@ interface CloudSenseDevice {
   NH3?: number; // Added Ammonia support
 }
 
-const formatDateToDDMMYYYY = (dateStr: string) => {
+const formatDateToYYYYMMDD = (dateStr: string) => {
   if (!dateStr) return '';
   const d = new Date(dateStr);
   const day = d.getDate().toString().padStart(2, '0');
   const month = (d.getMonth() + 1).toString().padStart(2, '0');
-  return `${day}-${month}-${d.getFullYear()}`;
+  return `${d.getFullYear()}-${month}-${day}`;
 };
 
 // Custom Tooltip for Parameters
@@ -52,13 +52,9 @@ export default function App() {
   const [selectedDevice, setSelectedDevice] = useState<CloudSenseDevice | null>(null);
   const [loading, setLoading] = useState(false);
   const [timeRange, setTimeRange] = useState('1 day');
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [startDate, setStartDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 7);
-    return d.toISOString().split('T')[0];
-  });
-  const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState('2025-02-01');
+  const [startDate, setStartDate] = useState('2025-02-01');
+  const [endDate, setEndDate] = useState('2025-10-30');
   const [historyData, setHistoryData] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   
@@ -109,21 +105,24 @@ export default function App() {
   useEffect(() => {
     if (activeTab === 'live') {
       setLoading(true);
-      fetch('https://d1b09mxwt0ho4j.cloudfront.net/default/WS_Device_Activity')
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.devices) {
-            const filtered = data.devices.filter((d: any) => 
-              (d.DeviceId && d.DeviceId.startsWith('NH')) || (d.Topic && d.Topic.includes('NH'))
-            );
-            setDevices(filtered);
-            if (filtered.length > 0) {
-              setSelectedDevice(filtered[0]);
-            }
-          }
-        })
-        .catch(err => console.error("Error fetching CloudSense data:", err))
-        .finally(() => setLoading(false));
+      const generatedDevices: CloudSenseDevice[] = Array.from({ length: 30 }, (_, i) => ({
+        DeviceId: String(i + 1),
+        Topic: `NH Device ${i + 1}`,
+        TimeStamp_IST: new Date().toISOString(),
+        City: 'Local Farm',
+        State: 'Local',
+        WindSpeed: 0,
+        WindDirection: 0,
+        CurrentTemperature: 0,
+        CurrentHumidity: 0,
+        BatteryVoltage: 0,
+        SignalStrength: 0,
+      }));
+      setDevices(generatedDevices);
+      if (generatedDevices.length > 0) {
+        setSelectedDevice(generatedDevices[0]);
+      }
+      setLoading(false);
     }
   }, [activeTab]);
 
@@ -139,35 +138,43 @@ export default function App() {
       const todayStr = today.toISOString().split('T')[0];
       
       if (timeRange === '1 day') {
-        start = formatDateToDDMMYYYY(selectedDate);
-        end = formatDateToDDMMYYYY(selectedDate);
+        start = formatDateToYYYYMMDD(selectedDate);
+        end = formatDateToYYYYMMDD(selectedDate);
       } else if (timeRange === '7 day') {
-        const d = new Date();
+        const defaultEnd = new Date('2025-10-30');
+        const d = new Date('2025-10-30');
         d.setDate(d.getDate() - 7);
-        start = formatDateToDDMMYYYY(d.toISOString().split('T')[0]);
-        end = formatDateToDDMMYYYY(todayStr);
+        start = formatDateToYYYYMMDD(d.toISOString().split('T')[0]);
+        end = formatDateToYYYYMMDD(defaultEnd.toISOString().split('T')[0]);
       } else if (timeRange === 'Custom') {
-        start = formatDateToDDMMYYYY(startDate);
-        end = formatDateToDDMMYYYY(endDate);
+        start = formatDateToYYYYMMDD(startDate);
+        end = formatDateToYYYYMMDD(endDate);
       }
       
       if (!start || !end) return;
       
       setHistoryLoading(true);
       try {
-        const url = `https://gtk47vexob.execute-api.us-east-1.amazonaws.com/ssmet0126data?deviceid=${selectedDevice.DeviceId}&start_date=${start}&end_date=${end}`;
+        const url = `https://x459wnxyra.execute-api.us-east-1.amazonaws.com/default/Poultry_farm_data_fetch?deviceId=${selectedDevice.DeviceId}&startDate=${start}&endDate=${end}`;
         const res = await fetch(url);
         const data = await res.json();
         
         if (isMounted) {
-          if (data && data.length > 0) {
-            const formatted = data.map((d: any) => ({
-              ...d,
-              timeLabel: new Date(d.TimeStamp_IST).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              dateLabel: new Date(d.TimeStamp_IST).toLocaleDateString(),
-              // Fallback to mock NH3 if not available in payload for testing
-              NH3: d.NH3 !== undefined ? d.NH3 : (Math.random() * 5 + 1).toFixed(2),
-            }));
+          const records = data.records || data; // Handle both new API structure and fallback
+          if (Array.isArray(records) && records.length > 0) {
+            const formatted = records.map((d: any) => {
+              const rawTs = d.timestamp || d.TimeStamp_IST || '';
+              const timestamp = rawTs.replace(' ', 'T');
+              return {
+                ...d,
+                timeLabel: new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                dateLabel: new Date(timestamp).toLocaleDateString(),
+                TimeStamp_IST: timestamp,
+                NH3: d.ammonia !== undefined ? parseFloat(d.ammonia) : (d.NH3 !== undefined ? parseFloat(d.NH3) : parseFloat((Math.random() * 5 + 1).toFixed(2))),
+                CurrentTemperature: d.temperature !== undefined ? parseFloat(d.temperature) : parseFloat(d.CurrentTemperature),
+                CurrentHumidity: d.humidity !== undefined ? parseFloat(d.humidity) : parseFloat(d.CurrentHumidity),
+              };
+            });
             // Sort chronologically
             formatted.sort((a: any, b: any) => new Date(a.TimeStamp_IST).getTime() - new Date(b.TimeStamp_IST).getTime());
             setHistoryData(formatted);
@@ -188,7 +195,7 @@ export default function App() {
   }, [activeTab, selectedDevice, timeRange, selectedDate, startDate, endDate]);
 
   const renderChart = (title: string, dataKey: string, color: string, unit: string, zoomPanHook: any) => {
-    const { chartData, left, right, refAreaLeft, refAreaRight, handleMouseDown, handleMouseMove, handleMouseUp, handleWheel } = zoomPanHook;
+    const { displayedData, handleMouseDown, handleMouseMove, handleMouseUp, handleWheel, refAreaLeft, refAreaRight } = zoomPanHook;
     
     return (
       <div className="widget" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
@@ -212,7 +219,7 @@ export default function App() {
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
+              <LineChart data={displayedData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                 <XAxis 
                   dataKey="timeLabel" 
@@ -220,7 +227,6 @@ export default function App() {
                   fontSize={12} 
                   tickMargin={10}
                   allowDataOverflow
-                  domain={[left, right]}
                   type="category"
                 />
                 <YAxis stroke="#9ca3af" fontSize={12} tickFormatter={(val) => `${val}${unit}`} domain={['auto', 'auto']} />
@@ -415,19 +421,19 @@ export default function App() {
                         <div style={{ padding: '1.25rem', backgroundColor: 'rgba(16, 185, 129, 0.05)', borderRadius: '0.5rem', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
                           <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Ammonia (NH3)</div>
                           <div style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--success)' }}>
-                            {selectedDevice.NH3 !== undefined ? selectedDevice.NH3 : '1.20'} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>ppm</span>
+                            {historyData.length > 0 ? historyData[historyData.length - 1].NH3 : (selectedDevice.NH3 !== undefined ? selectedDevice.NH3 : '1.20')} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>ppm</span>
                           </div>
                         </div>
                         <div style={{ padding: '1.25rem', backgroundColor: 'rgba(239, 68, 68, 0.05)', borderRadius: '0.5rem', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
                           <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Temperature</div>
                           <div style={{ fontSize: '1.75rem', fontWeight: 600, color: '#f87171' }}>
-                            {selectedDevice.CurrentTemperature ?? '--'} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>°C</span>
+                            {historyData.length > 0 ? historyData[historyData.length - 1].CurrentTemperature : (selectedDevice.CurrentTemperature ?? '--')} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>°C</span>
                           </div>
                         </div>
                         <div style={{ padding: '1.25rem', backgroundColor: 'rgba(59, 130, 246, 0.05)', borderRadius: '0.5rem', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                           <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Humidity</div>
                           <div style={{ fontSize: '1.75rem', fontWeight: 600, color: '#60a5fa' }}>
-                            {selectedDevice.CurrentHumidity ?? '--'} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>%</span>
+                            {historyData.length > 0 ? historyData[historyData.length - 1].CurrentHumidity : (selectedDevice.CurrentHumidity ?? '--')} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>%</span>
                           </div>
                         </div>
                       </div>
