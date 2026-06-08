@@ -132,8 +132,6 @@ export default function App() {
       
       let start = '';
       let end = '';
-      const today = new Date();
-      const todayStr = today.toISOString().split('T')[0];
       
       if (timeRange === '1 day') {
         start = formatDateToYYYYMMDD(selectedDate);
