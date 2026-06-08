@@ -105,12 +105,13 @@ export default function App() {
   useEffect(() => {
     if (activeTab === 'live') {
       setLoading(true);
+      const locations = ['Rupnagar', 'Chamkaur Sahib', 'Morinda', 'Anandpur Sahib', 'Kurali', 'Nangal'];
       const generatedDevices: CloudSenseDevice[] = Array.from({ length: 30 }, (_, i) => ({
         DeviceId: String(i + 1),
         Topic: `NH Device ${i + 1}`,
         TimeStamp_IST: new Date().toISOString(),
-        City: 'Local Farm',
-        State: 'Local',
+        City: locations[i % locations.length],
+        State: 'Punjab',
         WindSpeed: 0,
         WindDirection: 0,
         CurrentTemperature: 0,
@@ -119,9 +120,6 @@ export default function App() {
         SignalStrength: 0,
       }));
       setDevices(generatedDevices);
-      if (generatedDevices.length > 0) {
-        setSelectedDevice(generatedDevices[0]);
-      }
       setLoading(false);
     }
   }, [activeTab]);
@@ -361,88 +359,115 @@ export default function App() {
           {activeTab === 'live' && (
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               
-              <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-                <div className="widget" style={{ flex: '1 1 250px' }}>
-                  <h3 style={{ marginBottom: '1rem' }}>Deployed NH Devices</h3>
+              {!selectedDevice ? (
+                <div className="widget" style={{ width: '100%' }}>
+                  <h3 style={{ marginBottom: '1rem', fontSize: '1.5rem' }}>Deployed NH Devices</h3>
                   {loading ? (
                     <div className="loading-spinner" style={{ margin: '2rem auto' }}></div>
                   ) : devices.length === 0 ? (
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No active NH devices found on the network.</div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem' }} className="custom-scrollbar">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
                       {devices.map(device => (
                         <div 
                           key={device.DeviceId}
                           onClick={() => setSelectedDevice(device)}
                           style={{
-                            padding: '0.75rem 1rem',
+                            padding: '1.25rem 1.5rem',
                             borderRadius: '0.5rem',
                             cursor: 'pointer',
-                            backgroundColor: selectedDevice?.DeviceId === device.DeviceId ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-                            border: `1px solid ${selectedDevice?.DeviceId === device.DeviceId ? 'var(--primary)' : 'var(--border-color)'}`,
+                            backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                            border: '1px solid var(--border-color)',
                             transition: 'all 0.2s',
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center'
                           }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                            e.currentTarget.style.borderColor = 'var(--primary)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
+                            e.currentTarget.style.borderColor = 'var(--border-color)';
+                          }}
                         >
                           <div>
-                            <div style={{ fontWeight: 500, color: selectedDevice?.DeviceId === device.DeviceId ? 'var(--primary)' : 'var(--text-primary)' }}>
-                              {device.DeviceId}
+                            <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '1.1rem' }}>
+                              Device {device.DeviceId}
                             </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                               {device.City}, {device.State}
                             </div>
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--success)' }}></span>
-                            Active
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <button 
+                      onClick={() => setSelectedDevice(null)} 
+                      style={{ 
+                        padding: '0.5rem 1rem', 
+                        backgroundColor: 'transparent', 
+                        border: '1px solid var(--border-color)', 
+                        color: 'var(--text-primary)', 
+                        borderRadius: '0.375rem', 
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      ← Back to Device List
+                    </button>
+                    <h2 style={{ margin: 0 }}>Device {selectedDevice.DeviceId} Details</h2>
+                  </div>
 
-                <div style={{ flex: '2 1 500px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  {selectedDevice ? (
-                    <div className="widget">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                        <div>
-                          <h2 style={{ margin: 0 }}>Device {selectedDevice.DeviceId}</h2>
-                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
-                            Last updated: {new Date(selectedDevice.TimeStamp_IST).toLocaleString()}
-                          </p>
+                  <div className="widget">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                      <div>
+                        <h3 style={{ margin: 0 }}>Real-time Metrics</h3>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
+                          Last updated: {new Date(selectedDevice.TimeStamp_IST).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Mocked/Real Live Data Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+                      <div style={{ padding: '1.25rem', backgroundColor: 'rgba(16, 185, 129, 0.05)', borderRadius: '0.5rem', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Ammonia (NH3)</div>
+                        <div style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--success)' }}>
+                          {historyData.length > 0 ? historyData[historyData.length - 1].NH3 : (selectedDevice.NH3 !== undefined ? selectedDevice.NH3 : '1.20')} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>ppm</span>
                         </div>
                       </div>
-
-                      {/* Mocked/Real Live Data Grid */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
-                        <div style={{ padding: '1.25rem', backgroundColor: 'rgba(16, 185, 129, 0.05)', borderRadius: '0.5rem', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                          <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Ammonia (NH3)</div>
-                          <div style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--success)' }}>
-                            {historyData.length > 0 ? historyData[historyData.length - 1].NH3 : (selectedDevice.NH3 !== undefined ? selectedDevice.NH3 : '1.20')} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>ppm</span>
-                          </div>
+                      <div style={{ padding: '1.25rem', backgroundColor: 'rgba(239, 68, 68, 0.05)', borderRadius: '0.5rem', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Temperature</div>
+                        <div style={{ fontSize: '1.75rem', fontWeight: 600, color: '#f87171' }}>
+                          {historyData.length > 0 ? historyData[historyData.length - 1].CurrentTemperature : (selectedDevice.CurrentTemperature ?? '--')} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>°C</span>
                         </div>
-                        <div style={{ padding: '1.25rem', backgroundColor: 'rgba(239, 68, 68, 0.05)', borderRadius: '0.5rem', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                          <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Temperature</div>
-                          <div style={{ fontSize: '1.75rem', fontWeight: 600, color: '#f87171' }}>
-                            {historyData.length > 0 ? historyData[historyData.length - 1].CurrentTemperature : (selectedDevice.CurrentTemperature ?? '--')} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>°C</span>
-                          </div>
+                      </div>
+                      <div style={{ padding: '1.25rem', backgroundColor: 'rgba(59, 130, 246, 0.05)', borderRadius: '0.5rem', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Humidity</div>
+                        <div style={{ fontSize: '1.75rem', fontWeight: 600, color: '#60a5fa' }}>
+                          {historyData.length > 0 ? historyData[historyData.length - 1].CurrentHumidity : (selectedDevice.CurrentHumidity ?? '--')} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>%</span>
                         </div>
-                        <div style={{ padding: '1.25rem', backgroundColor: 'rgba(59, 130, 246, 0.05)', borderRadius: '0.5rem', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                          <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Humidity</div>
-                          <div style={{ fontSize: '1.75rem', fontWeight: 600, color: '#60a5fa' }}>
-                            {historyData.length > 0 ? historyData[historyData.length - 1].CurrentHumidity : (selectedDevice.CurrentHumidity ?? '--')} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>%</span>
-                          </div>
+                      </div>
+                      <div style={{ padding: '1.25rem', backgroundColor: 'rgba(245, 158, 11, 0.05)', borderRadius: '0.5rem', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Alert Status</div>
+                        <div style={{ fontSize: '1.75rem', fontWeight: 600, color: '#fbbf24' }}>
+                          {historyData.length > 0 ? (historyData[historyData.length - 1].alert_status || 'Normal') : 'Normal'}
                         </div>
                       </div>
                     </div>
-                  ) : (
-                    <div className="widget" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '200px', color: 'var(--text-secondary)' }}>
-                      Select a device from the list to view its real-time metrics.
-                    </div>
-                  )}
+                  </div>
 
                   {/* Historical Data Section */}
                   {selectedDevice && (
@@ -498,7 +523,7 @@ export default function App() {
                     </div>
                   )}
                 </div>
-              </div>
+              )}
             </div>
           )}
 
