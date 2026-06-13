@@ -592,7 +592,7 @@ export default function App() {
                         className="deployment-image"
                       />
                     </div>
-                    <div style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Deployment Location {idx + 1}</div>
+                    <div style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Deployment {idx + 1}</div>
                   </div>
                 ))}
               </div>
