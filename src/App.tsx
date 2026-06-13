@@ -2,7 +2,17 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { useChartZoomPan } from './hooks/useChartZoomPan';
 import ammoniaImg from './assets/ammonia.jpeg';
+import dep1 from './assets/deployment1.jpeg';
+import dep2 from './assets/deployment2.jpeg';
+import dep3 from './assets/deployment3.jpeg';
+import dep4 from './assets/deployment4.jpeg';
+import dep5 from './assets/deployment5.jpeg';
+import dep6 from './assets/deployment6.jpeg';
+import dep7 from './assets/deployment7.jpeg';
+import dep8 from './assets/deployment8.jpeg';
 import './index.css';
+
+const deploymentImages = [dep1, dep2, dep3, dep4, dep5, dep6, dep7, dep8];
 
 interface CloudSenseDevice {
   DeviceId: string;
@@ -278,6 +288,12 @@ export default function App() {
           >
             ⚙️ Hardware Specs
           </div>
+          <div 
+            className={`nav-item ${activeTab === 'deployments' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('deployments'); setSidebarOpen(false); }}
+          >
+            📸 Deployments
+          </div>
           
           <div style={{ margin: '2rem 0 1rem 0', padding: '0 1rem', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 600 }}>
             Resources
@@ -308,15 +324,25 @@ export default function App() {
           {/* Overview Tab */}
           {activeTab === 'overview' && (
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div className="widget" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', backgroundImage: 'linear-gradient(to right, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.5))' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                  <h2 style={{ margin: 0 }}>Poultry House Health System</h2>
+              <div className="widget" style={{ padding: '3rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '3rem', backgroundImage: 'linear-gradient(to right, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.5))' }}>
+                <div style={{ flex: '1 1 400px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1.25rem' }}>
+                  <h2 style={{ margin: 0, fontSize: '2.5rem', lineHeight: '1.2', color: 'var(--text-primary)' }}>Poultry House Health System</h2>
+                  <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>
+                    Advanced environmental monitoring and real-time analytics for modern poultry farming. Track ammonia levels, temperature, and humidity to ensure optimal health and safety for your flock.
+                  </p>
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <button className="btn btn-primary" onClick={() => setActiveTab('live')}>View Live Network</button>
+                  </div>
                 </div>
-                <img 
-                  src={ammoniaImg}
-                  alt="Poultry Sensor" 
-                  style={{ maxHeight: '350px', width: 'auto', borderRadius: '0.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }} 
-                />
+                <div style={{ flex: '1 1 300px', display: 'flex', justifyContent: 'center' }}>
+                  <img 
+                    src={dep3}
+                    alt="Poultry Sensor" 
+                    style={{ maxHeight: '350px', maxWidth: '100%', objectFit: 'cover', borderRadius: '0.75rem', boxShadow: '0 15px 40px rgba(0,0,0,0.4)', transition: 'transform 0.3s ease' }} 
+                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-3-layout" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
@@ -548,6 +574,27 @@ export default function App() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* Deployments Tab */}
+          {activeTab === 'deployments' && (
+            <div className="animate-fade-in">
+              <h2 style={{ marginBottom: '2rem' }}>Field Deployments</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
+                {deploymentImages.map((imgSrc, idx) => (
+                  <div key={idx} className="widget" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div className="deployment-image-container">
+                      <img 
+                        src={imgSrc} 
+                        alt={`Deployment ${idx + 1}`} 
+                        className="deployment-image"
+                      />
+                    </div>
+                    <div style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Deployment Location {idx + 1}</div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
